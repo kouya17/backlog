@@ -26,7 +26,7 @@ type httpClient interface {
 
 // Client : backlog client
 type Client struct {
-	apiKey     string
+	token      string
 	endpoint   string
 	baseURL    *url.URL
 	debug      bool
@@ -59,10 +59,10 @@ func OptionLog(l logger) func(*Client) {
 }
 
 // New builds a backlog client from the provided token, baseURL and options
-func New(apiKey, endpoint string, options ...Option) *Client {
+func New(accessToken, endpoint string, options ...Option) *Client {
 	baseURL, _ := url.Parse(endpoint)
 	s := &Client{
-		apiKey:     apiKey,
+		token:      accessToken,
 		endpoint:   endpoint,
 		baseURL:    baseURL,
 		httpclient: &http.Client{},
@@ -131,9 +131,9 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	}
 
 	// add 'apiKey' to the url path
-	q := u.Query()
-	q.Set("apiKey", c.apiKey)
-	u.RawQuery = q.Encode()
+	//q := u.Query()
+	//q.Set("apiKey", c.apiKey)
+	//u.RawQuery = q.Encode()
 
 	var buf io.ReadWriter
 	if body != nil {
@@ -149,6 +149,9 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	if err != nil {
 		return nil, err
 	}
+
+	// add 'token' to Authorization header
+	req.Header.Set("Authorization", "Bearer " + c.token)
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -209,9 +212,9 @@ func (c *Client) UploadMultipartFile(ctx context.Context, method, urlStr, fpath,
 	}
 
 	// add 'apiKey' to the url path
-	q := u.Query()
-	q.Set("apiKey", c.apiKey)
-	u.RawQuery = q.Encode()
+	//q := u.Query()
+	//q.Set("apiKey", c.apiKey)
+	//u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest(method, u.String(), pr)
 	if err != nil {
@@ -221,6 +224,8 @@ func (c *Client) UploadMultipartFile(ctx context.Context, method, urlStr, fpath,
 	if err := c.Do(ctx, req, &v); err != nil {
 		return err
 	}
+	// add 'token' to Authorization header
+	req.Header.Set("Authorization", "Bearer " + c.token)
 	return nil
 }
 
